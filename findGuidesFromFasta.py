@@ -7,10 +7,13 @@
 import regex as re
 import sys
 
-patternPlus = re.compile("[ACTGN]{51}[ACTGN]GG[ACTGN]{51}")
-patternMinus = re.compile("[ACTGN]{51}CC[ACTGN][ACTGN]{51}")
+patternPlus = re.compile("[ACTG]{51}[ACTG]GG[ACTG]{51}")
+patternMinus = re.compile("[ACTG]{51}CC[ACTG][ACTG]{51}")
 
 inFileName = sys.argv[1]
+desiredIDsFilename = sys.argv[2]
+
+
 
 # load fasta
 
@@ -44,6 +47,7 @@ class fasta:
         self.n = n
         self.seq = ''.join(x.rstrip() for x in record[1:])
         self.ntLength = len(self.seq)
+        self.aaLength = self.ntLength / 3.0
         plusMatches = list(re.finditer(patternPlus, self.seq, overlapped=True))
         minusMatches = list(re.finditer(patternMinus, self.seq, overlapped=True))
         self.guides = [guide(x, "+") for x in plusMatches] + [guide(x, "-") for x in minusMatches]
@@ -51,13 +55,13 @@ class fasta:
 class guide:
     help = 'stores index, strand, and repair template of guide RNA'
     def __init__(self, match, strand):
-        self.strand = strand
+        self.PAMstrand = strand
         self.start = match.span()[0]
         self.end = match.span()[1]
         if(strand == "+"):
             self.gRNA = match.group()[31:54]
         elif(strand == "-"):
-            self.gRNA = match.group()[51:74]
+            self.gRNA = revComp(match.group()[51:74])
         self.offset = self.start%3
         if self.offset == 0:
             self.stopIndex = 51
@@ -71,11 +75,48 @@ class guide:
 fastaRecords = splitFasta(inFileName)
 fastaRecords = list(fastaRecords)
 
+# load desired IDs
+with open(desiredIDsFilename, "r") as infile:
+    desiredIDs = [x.strip() for x in infile.readlines()]
 
-for gene in fastaRecords[0:4]:
+# print header
+headerText = "\t".join([
+    "geneHeader",
+    "IDnumber",
+    "ntLength",
+    "aalength",
+    "guide",
+    "PAMstrand",
+    "repairTemplate",
+    "pctIntoCDS",
+    "uniqueID"
+])
+
+print(headerText)
+uniqueID = 1
+# iterate through genes
+for gene in fastaRecords:
+    if (gene.N not in desiredIDs) or (gene.ntLength %3 != 0):
+        continue
+    # iterate through guides
+    headerWithoutN = ''.join(gene.header.split("-")[1:])
     for guide in gene.guides:
-        output = "\t".join([str(x) for x in [gene.N, guide.strand, guide.offset, guide.gRNA, guide.repairTemplate]])
+        pctIntoGene = (guide.start + 50) / float(gene.ntLength)
+        if (float(pctIntoGene) > 0.8):
+            continue
+        output = "\t".join([str(x) for x in [
+            headerWithoutN,
+            gene.N,
+            gene.ntLength,
+            int(gene.aaLength),
+            guide.gRNA,
+            guide.PAMstrand,
+            guide.repairTemplate,
+            pctIntoGene,
+            uniqueID
+            ]])
         print(output)
+        uniqueID += 1
 
 
 # fastaRecords[0].plusMatches[0]

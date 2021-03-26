@@ -1,0 +1,6 @@
+data/*.gvcf
+data/*.vcf
+data/*.tsv
+data/*.gz
+data/*.Rdata
+data/*.RDS

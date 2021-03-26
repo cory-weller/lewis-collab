@@ -29,19 +29,15 @@ dat[, fraction.into.gene := codons.from.start / AA_length]
 dat[, ID := 1:.N]
 
 # write guides (and their ID numbers) to .tsv file
-fwrite(dat[, c("ID","guide")], file="guides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
+fwrite(dat[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
 # convert .tsv to .fasta
-system("sed 's/^/>/g' guides.tsv | tr '\t' '\n' > data/guides.fasta")
-system("(cd sgRNAScorer2 && \
-    python identifyAndScore.py \
-    -i ../data/guides.fasta \
-    -o ../data/guides.scores.tab \
-    -p 3 \
-    -s 20 \
-    -l NGG)")
+system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
 
-guideScores <- fread('data/guides.scores.tab')
+system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tab -p 3 -s 20 -l NGG)")
+   
+
+guideScores <- fread('data/coreguides.scores.tab')
 
 # generate histogram of scores
 # hist(guideScores$Score, breaks=50)
@@ -102,8 +98,3 @@ dat.filtered[, "frac.perfect.rank" := frank(-frac.perfect, ties.method="random")
 dat.filtered[frac.perfect.rank <= 20][, .N, by=GENEID][N>=5]
 
 ggplot(dat.filtered[frac.perfect.rank <= 20], aes(x=GENEID, y=frac.perfect)) + geom_point()
-
-# Download allORFS
-
-system("wget -O data/allORFS_pangenome.fasta.gz http://1002genomes.u-strasbg.fr/files/allORFs_pangenome.fasta.gz")
-system("gunzip data/
