@@ -7,8 +7,8 @@
 import regex as re
 import sys
 
-patternPlus = re.compile("[ACTG]{51}[ACTG]GG[ACTG]{51}")
-patternMinus = re.compile("[ACTG]{51}CC[ACTG][ACTG]{51}")
+patternPlus = re.compile("[ACTG]{52}[ACTG]GG[ACTG]{52}")
+patternMinus = re.compile("[ACTG]{52}CC[ACTG][ACTG]{52}")
 
 inFileName = sys.argv[1]
 desiredIDsFilename = sys.argv[2]
@@ -59,9 +59,9 @@ class guide:
         self.start = match.span()[0]
         self.end = match.span()[1]
         if(strand == "+"):
-            self.gRNA = match.group()[31:54]
+            self.gRNA = match.group()[32:55]
         elif(strand == "-"):
-            self.gRNA = revComp(match.group()[51:74])
+            self.gRNA = revComp(match.group()[52:75])
         self.offset = self.start%3
         if self.offset == 0:
             self.stopIndex = 51
@@ -69,7 +69,7 @@ class guide:
             self.stopIndex = 50
         elif self.offset == 2:
             self.stopIndex = 52
-        self.repairTemplate = match.group()[0:self.stopIndex].lower() + "TAA" + match.group()[(self.stopIndex+4):].lower()
+        self.repairTemplate = match.group()[(self.stopIndex - 50):self.stopIndex].lower() + "TAA" + match.group()[(self.stopIndex + 4):(self.stopIndex + 54)].lower()
 
 
 fastaRecords = splitFasta(inFileName)
@@ -87,6 +87,7 @@ headerText = "\t".join([
     "aalength",
     "guide",
     "PAMstrand",
+    "frame",
     "repairTemplate",
     "pctIntoCDS",
     "uniqueID"
@@ -111,6 +112,7 @@ for gene in fastaRecords:
             int(gene.aaLength),
             guide.gRNA,
             guide.PAMstrand,
+            guide.offset,
             guide.repairTemplate,
             pctIntoGene,
             uniqueID
