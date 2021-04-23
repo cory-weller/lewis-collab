@@ -4,3 +4,4 @@ data/*.tsv
 data/*.gz
 data/*.Rdata
 data/*.RDS
+*.json
