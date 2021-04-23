@@ -7,12 +7,15 @@
 import regex as re
 import sys
 
-patternPlus = re.compile("[ACTG]{51}[ACTG]GG[ACTG]{51}")
-patternMinus = re.compile("[ACTG]{51}CC[ACTG][ACTG]{51}")
+preNucleotides = 52
+armLength = 50
+guideLength = 20
+pattern = re.compile("""[ACTG]{%s}[ACTG]GG[ACTG]{%s}""" % (preNucleotides, preNucleotides))
+guideStartIdx = preNucleotides - guideLength
+guideEndIdx = preNucleotides
 
 inFileName = sys.argv[1]
 desiredIDsFilename = sys.argv[2]
-
 
 
 # load fasta
@@ -24,7 +27,18 @@ def revComp(dnaSeq):
             "T" : "A",
             "C" : "G",
             "G" : "C",
-            "N" : "N"
+            "N" : "N",
+            "Y" : "R",
+            "R" : "Y",
+            "W" : "W",
+            "S" : "S",
+            "K" : "M",
+            "M" : "K",
+            "D" : "H",
+            "V" : "B",
+            "H" : "D",
+            "B" : "V",
+            "X" : "X",
     }
     return(''.join(rev[x] for x in dnaSeq[::-1]))
 
@@ -46,10 +60,11 @@ class fasta:
         # n is the index of the entry, starting at 0
         self.n = n
         self.seq = ''.join(x.rstrip() for x in record[1:])
+        self.revCompSeq = revComp(self.seq)
         self.ntLength = len(self.seq)
         self.aaLength = self.ntLength / 3.0
-        plusMatches = list(re.finditer(patternPlus, self.seq, overlapped=True))
-        minusMatches = list(re.finditer(patternMinus, self.seq, overlapped=True))
+        plusMatches = list(re.finditer(pattern, self.seq, overlapped=True))
+        minusMatches = list(re.finditer(pattern, self.revCompSeq, overlapped=True))
         self.guides = [guide(x, "+") for x in plusMatches] + [guide(x, "-") for x in minusMatches]
 
 class guide:
@@ -58,18 +73,19 @@ class guide:
         self.PAMstrand = strand
         self.start = match.span()[0]
         self.end = match.span()[1]
-        if(strand == "+"):
-            self.gRNA = match.group()[31:54]
-        elif(strand == "-"):
-            self.gRNA = revComp(match.group()[51:74])
-        self.offset = self.start%3
-        if self.offset == 0:
-            self.stopIndex = 51
-        elif self.offset == 1:
-            self.stopIndex = 50
-        elif self.offset == 2:
-            self.stopIndex = 52
-        self.repairTemplate = match.group()[0:self.stopIndex].lower() + "TAA" + match.group()[(self.stopIndex+4):].lower()
+        self.gRNA = match.group()[guideStartIdx:guideEndIdx]
+        self.frame = (preNucleotides + self.start)%3
+        if self.PAMstrand == "+" :
+            self.repairTemplate = match.group()[((preNucleotides - armLength) - self.frame) : (preNucleotides - self.frame)].lower() + "TAA" + match.group()[(preNucleotides + 4 - self.frame):(preNucleotides + 4 - self.frame + armLength)].lower()
+        elif self.PAMstrand == "-" :
+            if self.frame == 0:
+                self.offset = 1
+            elif self.frame == 1:
+                self.offset = 2
+            elif self.frame == 2:
+                self.offset = 0
+            self.repairTemplate = match.group()[ (preNucleotides - armLength - self.offset) : (preNucleotides - self.offset) ].lower() + "TTA" + match.group()[(preNucleotides + 4 - self.offset) : (preNucleotides +4 - self.offset + armLength) ].lower()
+
 
 
 fastaRecords = splitFasta(inFileName)
@@ -87,6 +103,7 @@ headerText = "\t".join([
     "aalength",
     "guide",
     "PAMstrand",
+    "frame",
     "repairTemplate",
     "pctIntoCDS",
     "uniqueID"
@@ -111,6 +128,7 @@ for gene in fastaRecords:
             int(gene.aaLength),
             guide.gRNA,
             guide.PAMstrand,
+            guide.frame,
             guide.repairTemplate,
             pctIntoGene,
             uniqueID
