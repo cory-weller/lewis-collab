@@ -63,7 +63,6 @@ sed 's/^/>/g' | tr ' ' '\n' > sgRNAScorer2/pangenomeguides.fasta
 ```
 
 
-```
 
 ## Structural reverse primer sequence
 `GTTTCAGAGCTATGCTGGAA` sequence stored as file `data/structuralRprimer.dna`
