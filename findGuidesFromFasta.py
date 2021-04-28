@@ -12,7 +12,7 @@ armLength = 50
 guideLength = 20
 pattern = re.compile("""[ACTG]{%s}[ACTG]GG[ACTG]{%s}""" % (preNucleotides, preNucleotides))
 guideStartIdx = preNucleotides - guideLength
-guideEndIdx = preNucleotides
+guideEndIdx = preNucleotides + 3
 
 inFileName = sys.argv[1]
 desiredIDsFilename = sys.argv[2]
