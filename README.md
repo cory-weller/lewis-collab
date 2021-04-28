@@ -35,18 +35,26 @@ cut -d "-" -f 1 data/pangenomeSpecificGenes.txt > data/pangenomeSpecificIDs.txt
 
 ## Generate pangenome-specific guide sequences
 ```
+module purge python
+module load python/3.6
 python findGuidesFromFasta.py data/allORFS_pangenome.fasta data/pangenomeSpecificIDs.txt | \
     gzip > data/pangenome.guides.tsv.gz
 ```
 
 ## Score pangenome guides
 ```
-module purge
-module load biopython
+module purge python
+module load python/2.7
+# awk column 12 is unique ID, column 5 is guide sequence
 zcat data/pangenome.guides.tsv.gz | \
-    awk 'NR > 1 {print $9,$5}' | \
+    awk 'NR > 1 {print $12,$5}' | \
 sed 's/^/>/g' | tr ' ' '\n' > sgRNAScorer2/pangenomeguides.fasta
 
+
+# Note sgRNAScorer2 requires Python 2.7 or greater; python packages: BioPython and and scikit-learn
+# Note guide RNA sequences must include the NGG PAM sequence
+module purge python
+module load python/2.7
 (cd sgRNAScorer2 && \
     python identifyAndScore.py \
     -i pangenomeguides.fasta \
