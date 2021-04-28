@@ -78,7 +78,7 @@ class guide:
         self.frame = (preNucleotides + self.start)%3
         if self.PAMstrand == "+" :
             self.startGuide = self.start + preNucleotides - guideLength + 1
-            self.endGuide = self.startGuide + guideLength
+            self.endGuide = self.startGuide + guideLength - 1
             self.repairTemplate = match.group()[((preNucleotides - armLength) - self.frame) : (preNucleotides - self.frame)].lower() + "TAA" + match.group()[(preNucleotides + 4 - self.frame):(preNucleotides + 4 - self.frame + armLength)].lower()
         elif self.PAMstrand == "-" :
             self.endGuide = self.ntLength - (self.end - preNucleotides) + 4
