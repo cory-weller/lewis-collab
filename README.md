@@ -39,7 +39,7 @@ python findGuidesFromFasta.py data/allORFS_pangenome.fasta data/pangenomeSpecifi
     gzip > data/pangenome.guides.tsv.gz
 ```
 
-## score pangenome guides
+## Score pangenome guides
 ```
 module purge
 module load biopython
