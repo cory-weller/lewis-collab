@@ -64,9 +64,60 @@ module load python/2.7
     -l NGG)
 ```
 
+## Retrieve reference sequences from NCBI
+```
+# Download S288c reference genome fasta files:
+module load edirect
+efetch -db nucleotide -id KP263414 -format fasta  > data/S288c.fasta
+efetch -db nucleotide -id BK006935 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006936 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006937 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006938 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006939 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006940 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006941 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006934 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006942 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006943 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006944 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006945 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006946 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006947 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006948 -format fasta >> data/S288c.fasta 
+efetch -db nucleotide -id BK006949 -format fasta >> data/S288c.fasta 
+
+# BK006935 I
+# BK006936 II
+# BK006937 III
+# BK006938 IV
+# BK006939 V
+# BK006940 VI
+# BK006941 VII
+# BK006934 VIII
+# BK006942 IX
+# BK006943 X
+# BK006944 XI
+# BK006945 XII
+# BK006946 XIII
+# BK006947 XIV
+# BK006948 XV
+# BK006949 XVI
+# KP263414 mitochondrion
+```
+
+## Calculate multiple-targetting of guides
+```
+module load python/3.6
+python guideTargeting.py \
+    data/S288c.fasta \
+    data/allORFS_pangenome.fasta \
+    data/pangenomeguides.scores.tab > data/pangenomeGuideMatches.tsv
+```
+
 ## Process scored guides in R
 
 ```
+module load R/3.6.3
 
 ```
 
