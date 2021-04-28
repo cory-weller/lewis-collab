@@ -65,19 +65,24 @@ class fasta:
         self.aaLength = self.ntLength / 3.0
         plusMatches = list(re.finditer(pattern, self.seq, overlapped=True))
         minusMatches = list(re.finditer(pattern, self.revCompSeq, overlapped=True))
-        self.guides = [guide(x, "+") for x in plusMatches] + [guide(x, "-") for x in minusMatches]
+        self.guides = [guide(x, "+", self.ntLength  ) for x in plusMatches] + [guide(x, "-", self.ntLength) for x in minusMatches]
 
 class guide:
     help = 'stores index, strand, and repair template of guide RNA'
-    def __init__(self, match, strand):
+    def __init__(self, match, strand, ntLength):
         self.PAMstrand = strand
         self.start = match.span()[0]
+        self.ntLength = ntLength
         self.end = match.span()[1]
         self.gRNA = match.group()[guideStartIdx:guideEndIdx]
         self.frame = (preNucleotides + self.start)%3
         if self.PAMstrand == "+" :
+            self.startGuide = self.start + preNucleotides - guideLength + 1
+            self.endGuide = self.startGuide + guideLength
             self.repairTemplate = match.group()[((preNucleotides - armLength) - self.frame) : (preNucleotides - self.frame)].lower() + "TAA" + match.group()[(preNucleotides + 4 - self.frame):(preNucleotides + 4 - self.frame + armLength)].lower()
         elif self.PAMstrand == "-" :
+            self.endGuide = self.ntLength - (self.end - preNucleotides) + 4
+            self.startGuide = self.endGuide + guideLength - 1
             if self.frame == 0:
                 self.offset = 1
             elif self.frame == 1:
@@ -87,7 +92,10 @@ class guide:
             self.repairTemplate = match.group()[ (preNucleotides - armLength - self.offset) : (preNucleotides - self.offset) ].lower() + "TTA" + match.group()[(preNucleotides + 4 - self.offset) : (preNucleotides +4 - self.offset + armLength) ].lower()
 
 
-
+#startGuide
+#endGuide
+#startPAM
+#endPAM
 fastaRecords = splitFasta(inFileName)
 fastaRecords = list(fastaRecords)
 
@@ -102,6 +110,8 @@ headerText = "\t".join([
     "ntLength",
     "aalength",
     "guide",
+    "startGuide",
+    "endGuide",
     "PAMstrand",
     "frame",
     "repairTemplate",
@@ -118,7 +128,7 @@ for gene in fastaRecords:
     # iterate through guides
     headerWithoutN = ''.join(gene.header.split("-")[1:])
     for guide in gene.guides:
-        pctIntoGene = (guide.start + 50) / float(gene.ntLength)
+        pctIntoGene = (guide.endGuide) / float(gene.ntLength)
         if (float(pctIntoGene) > 0.8):
             continue
         output = "\t".join([str(x) for x in [
@@ -127,6 +137,8 @@ for gene in fastaRecords:
             gene.ntLength,
             int(gene.aaLength),
             guide.gRNA,
+            guide.startGuide,
+            guide.endGuide,
             guide.PAMstrand,
             guide.frame,
             guide.repairTemplate,
