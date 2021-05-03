@@ -8,7 +8,7 @@ panGenomeFilename = sys.argv[2]
 guidesFilename = sys.argv[3]
 
 # number of nucleotides (from 3' end) requiring perfect match
-threePrimeNucleotides = 10
+threePrimeNucleotides = 12
 
 coreGenomeFilename = "data/S288c.fasta"
 panGenomeFilename = "data/allORFS_pangenome.fasta"
