@@ -3,9 +3,14 @@
 
 library(data.table)
 
-guideScores <- fread('data/pangenomeguides.scores.tab')
+guideScores <- fread('data/pangenomeguides.scores.pam.tsv')
 guideTargetCounts <- fread('data/guideTargetCounts.tsv')
 setnames(guideTargetCounts, c("guide", "coreGenomePlus", "coreGenomeMinus", "panGenomePlus", "panGenomeMinus"))
+
+threePrimeRetron <- "AGGAAACCCGTTTCTTCTGACGTAAGGGTGCGCA"
+structuralgRNAprimer <- "GTTTCAGAGCTATGCTGGAA"
+
+
 
 panGenomeGuides <- cbind(guideTargetCounts, guideScores)
 panGenomeGuides[, guide := NULL]
@@ -24,15 +29,28 @@ guides.merged <- merge(panGenomeGuides, RTs)
 guides.merged[, panGenomeTotal := panGenomePlus + panGenomeMinus]
 guides <- guides.merged[coreGenomeMinus == 0 & coreGenomePlus == 0 & panGenomeTotal == 1]
 guides[, c("panGenomeTotal","coreGenomePlus","coreGenomeMinus","panGenomePlus","panGenomeMinus") := NULL]
-# left with 74138 guides for pangenome
 
-setkey(guides, endGuide)
+# truncate percent into cds to 2 decimal points
+guides[, pctIntoCDS := floor(pctIntoCDS*100)/100]
 
-# exclude guides ending in GGG, which 
-guides <- guides[ ! grepl("GGG$", guide, perl=TRUE)]
+# calculate "meta score" equal to (truncated sgRNAScorer2 value) * (1 - pctIntoCDS) * (10*PAM_count)
 
-# calculate "meta score" equal to (sgRNAScorer2 value) * (1 - pctIntoCDS)
-guides[, metaScore := Score * (1-pctIntoCDS)]
+guides[, metaScore := 0]
+
+# Prefer guides with score >= 0
+guides[Score >= 0, metaScore := metaScore + 100000]
+
+# Prefer guides with fewer PAMs in the sequence
+guides[,metaScore := metaScore + ((10 - PAM_count) * 10000)]
+
+# Prefer guides within first 50% of coding sequence
+guides[pctIntoCDS <= 0.5, metaScore := metaScore + 1000]
+
+# Break ties based on guide score bin
+guides[,guideScoreBin := cut(Score, breaks=999)]
+guides[,guideScoreBin := factor(guideScoreBin)]
+guides[,guideScoreBin := as.numeric(guideScoreBin)]
+guides[, metaScore := metaScore + guideScoreBin]
 
 # rank each gene's gRNAs by metaScore
 guides[, "metaRank" := frank(-metaScore), by=geneHeader]
@@ -42,32 +60,9 @@ guides.final <- guides[metaRank <= 5]
 
 # Check how many genes are covered
 guides.final[, .N, by=geneHeader]
-# 996 genes have at least one guide
 
+# Clean up table
+guides.final[, c("SeqID", "PAM_count", "metaScore", "guideScoreBin", "metaRank") := NULL]
 
-## HOW TO ADDRESS OVERLAP QUESTION?
-
-
-setkey(guideScores, uniqueID)
-
-guides <- fread('zcat data/pangenome.guides.tsv.gz')
-
-setkey(guides, uniqueID)
-
-dat <- merge(guides, guideScores)
-
-dat <- dat[Score > 0]
-
-dat[, .N, by=list(geneHeader)]
-
-atLeastFive <- dat[, .N, by=list(geneHeader)][N >= 5]$geneHeader
-
-dat[, scoreRank := frank(-Score), by=geneHeader]
-
-dat <- dat[geneHeader %in% atLeastFive & scoreRank <= 5]
-
-dat [, c("SeqID","Sequence","scoreRank", "uniqueID") := NULL]
-
-fwrite(dat, file="data/pangenomeguides.final.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
-
-817 of 1077 pangenome-specific specific sequences have 5 guides within  80% of gene
+# Write output
+fwrite(guides.final, "data/guides.final.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
