@@ -1,57 +1,70 @@
 #!/usr/bin/env Rscript
 
-# ensure R and biopython modules are loaded
-# ensure sgRNAScorer2 scripts are in the main directory (won't work in subfolder!)
+# ensure R/3.6 and python/2.7 modules are loaded
 
 library(data.table)
 library(ggplot2)
 library(ggthemes)
-setwd("/scratch/caw5cv/lewis-collab")
 
-# load guide data structure as data.table
-dat <- readRDS('data/gRNAS.RDS')
 
-# load gene lengths .tsv and reformat
-gene_lengths <- fread('data/gene_lengths.tsv')
-setnames(gene_lengths, c("ID2", "GENEID", "AA_length"))
-gene_lengths[, "ID2" := NULL]
+if(! file.exists("data/coreguides.tsv.gz")) {
+    # load core guides
+    coreGuides <- fread('zcat data/1011Genomes.guides.tsv.gz')
 
-# merge gene AA lengths into guide table
-setkey(gene_lengths, GENEID)
-setkey(dat, GENEID)
-dat <- merge(dat, gene_lengths)
-# Note that AA length is simply equal to codons.from.start + codons.from.stop
+    # load gene lengths .tsv and reformat
+    gene_lengths <- fread('data/gene_lengths.tsv')
+    setnames(gene_lengths, c("ID2", "GENEID", "AA_length"))
+    gene_lengths[, "ID2" := NULL]
 
-# calculate how far into gene the guide targets
-dat[, fraction.into.gene := codons.from.start / AA_length]
+    # merge gene AA lengths into guide table
+    setkey(gene_lengths, GENEID)
+    setkey(coreGuides, GENEID)
+    coreGuides <- merge(coreGuides, gene_lengths)
+    # Note that AA length is simply equal to codons.from.start + codons.from.stop
 
-# add unique ID for each guide
-dat[, ID := 1:.N]
+    # calculate how far into gene the guide targets
+    coreGuides[, fraction.into.gene := codons.from.start / AA_length]
 
-# write guides (and their ID numbers) to .tsv file
-fwrite(dat[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
+    # add unique ID for each guide
+    coreGuides[, ID := 1:.N]
 
-# convert .tsv to .fasta
-system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
+    # Score core genome guides (if scores do not yet exist)
+    if(! file.exists("data/coreguides.scores.tab")) {
 
-system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tab -p 3 -s 20 -l NGG)")
-   
 
-guideScores <- fread('data/coreguides.scores.tab')
+        # write guides (and their ID numbers) to .tsv file
+        fwrite(coreGuides[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
-# generate histogram of scores
-# hist(guideScores$Score, breaks=50)
+        # convert .tsv to .fasta
+        system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
 
-# convert SeqID column back to simply numeric ID
+        system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tab -p 3 -s 20 -l NGG)")   
+        system("rm sgRNAScorer2/coreguides.fasta")
+    }
 
-guideScores[, ID := tstrsplit(SeqID, "_")[1]]
-guideScores[, ID := as.numeric(ID)]
-guideScores[, c("SeqID","Sequence") := NULL]
-setkey(guideScores, ID)
+    coreGuideScores <- fread('data/coreguides.scores.tab')
 
-# Merge score into big table
-setkey(dat, ID)
-dat <- merge(guideScores, dat)
+    # generate histogram of scores
+    # hist(coreGuideScores$Score, breaks=50)
+
+    # convert SeqID column back to simply numeric ID
+
+    coreGuideScores[, ID := tstrsplit(SeqID, "_")[1]]
+    coreGuideScores[, ID := as.numeric(ID)]
+    coreGuideScores[, c("SeqID","Sequence") := NULL]
+    setkey(coreGuideScores, ID)
+
+    # Merge score into big table
+    setkey(coreGuides, ID)
+    coreGuides <- merge(coreGuideScores, coreGuides)
+
+    # Write final guide score table to file
+    fwrite(coreGuides, file="data/coreguides.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
+    system("gzip data/coreguides.tsv")
+} else {
+    coreGuides <- fread("zcat data/coreguides.tsv.gz")
+}
+
 
 # Flag putative guides where fraction.into.gene < 0.8 and sgRNA score > 0
 
