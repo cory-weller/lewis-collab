@@ -61,6 +61,7 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     # Write final guide score table to file
     fwrite(coreGuides, file="data/coreguides.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     system("gzip data/coreguides.tsv")
+    system("rm data/coreguides.scores.tab")
 } else {
     coreGuides <- fread("zcat data/coreguides.tsv.gz")
 }
