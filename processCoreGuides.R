@@ -34,6 +34,9 @@ if(! file.exists("data/coreguides.tsv.gz")) {
         # write guides (and their ID numbers) to .tsv file
         fwrite(coreGuides[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
+        # count PAMs
+        system("python countPAM.py data/coreguides.scores.tab 10 > data/coreguides.scores.pam.tsv")
+
         # convert .tsv to .fasta
         system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
 
@@ -43,8 +46,7 @@ if(! file.exists("data/coreguides.tsv.gz")) {
 
     coreGuideScores <- fread('data/coreguides.scores.tab')
 
-    # count PAMs 
-    system("python countPAM.py data/coreguides.scores.tab > data/coreguides.scores.pam.tsv")
+    # count PAMs
 
     # generate histogram of scores
     # hist(coreGuideScores$Score, breaks=50)
