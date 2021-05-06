@@ -31,7 +31,6 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     # Score core genome guides (if scores do not yet exist)
     if(! file.exists("data/coreguides.scores.tab")) {
 
-
         # write guides (and their ID numbers) to .tsv file
         fwrite(coreGuides[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
@@ -43,6 +42,9 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     }
 
     coreGuideScores <- fread('data/coreguides.scores.tab')
+
+    # count PAMs 
+    system("python countPAM.py data/coreguides.scores.tab > data/coreguides.scores.pam.tsv")
 
     # generate histogram of scores
     # hist(coreGuideScores$Score, breaks=50)
