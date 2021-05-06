@@ -29,24 +29,22 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     coreGuides[, ID := 1:.N]
 
     # Score core genome guides (if scores do not yet exist)
-    if(! file.exists("data/coreguides.scores.tab")) {
+    if(! file.exists("data/coreguides.scores.tsv")) {
 
         # write guides (and their ID numbers) to .tsv file
         fwrite(coreGuides[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
         # count PAMs
-        system("python countPAM.py data/coreguides.scores.tab 10 > data/coreguides.scores.pam.tsv")
+        system("python countPAM.py data/coreguides.scores.tsv 10 > data/coreguides.scores.pam.tsv")
 
         # convert .tsv to .fasta
         system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
 
-        system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tab -p 3 -s 20 -l NGG)")   
+        system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tsv -p 3 -s 20 -l NGG)")   
         system("rm sgRNAScorer2/coreguides.fasta")
     }
 
-    coreGuideScores <- fread('data/coreguides.scores.tab')
-
-    # count PAMs
+    coreGuideScores <- fread('data/coreguides.scores.pam.tsv')
 
     # generate histogram of scores
     # hist(coreGuideScores$Score, breaks=50)
@@ -65,54 +63,54 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     # Write final guide score table to file
     fwrite(coreGuides, file="data/coreguides.tsv", quote=FALSE, row.names=FALSE, col.names=TRUE, sep="\t")
     system("gzip data/coreguides.tsv")
-    system("rm data/coreguides.scores.tab")
+    system("rm data/coreguides.scores.tsv data/coreguides.scores.pam.tsv")
 } else {
     coreGuides <- fread("zcat data/coreguides.tsv.gz")
 }
 
 
-# Flag putative guides where fraction.into.gene < 0.8 and sgRNA score > 0
+# # Flag putative guides where fraction.into.gene < 0.8 and sgRNA score > 0
 
-dat[, QC_PASS := ifelse(fraction.into.gene < 0.8 & Score > 0 & frac.perfect > 0.99, TRUE, FALSE)]
+# dat[, QC_PASS := ifelse(fraction.into.gene < 0.8 & Score > 0 & frac.perfect > 0.99, TRUE, FALSE)]
 
-# 477682 guides in first 80% of gene
-# 163433 guides have score > 0
-# 130419 guides pass both QC
+# # 477682 guides in first 80% of gene
+# # 163433 guides have score > 0
+# # 130419 guides pass both QC
 
-# Check number of guides that pass both QC for various degrees of desired frac.perfect
-o <- foreach(i = c(0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.975, 0.99, 0.999, 1), .combine="rbind") %do% {
-    data.table("frac.perfect"=i, "N"=nrow(dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= i]))
-}
+# # Check number of guides that pass both QC for various degrees of desired frac.perfect
+# o <- foreach(i = c(0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.975, 0.99, 0.999, 1), .combine="rbind") %do% {
+#     data.table("frac.perfect"=i, "N"=nrow(dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= i]))
+# }
 
-# Look at distribution for # of guides for each gene
-ggplot(o, aes(x=frac.perfect, y=N)) +
-geom_point() +
-geom_label(aes(y=N+4000,x=frac.perfect+0.02,label=frac.perfect)) +
-labs(x="fraction of strains covered by guide exactly", y="Number of guides")
-
-
-dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= 0.8, .N, by=list(GENEID]
-
-o <- foreach(i = c(0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.975, 0.99, 0.999, 1), .combine="rbind") %do% {
-    foreach(MinGuidesPerGene = 1:10, .combine="rbind") %do% {
-        data.table("frac.perfect"=i, 
-                    "MinGuidesPerGene" = MinGuidesPerGene,
-                    "N_Genes"=nrow(dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= i, .N, by=list(GENEID)][N >= MinGuidesPerGene]))
-    }
-}
+# # Look at distribution for # of guides for each gene
+# ggplot(o, aes(x=frac.perfect, y=N)) +
+# geom_point() +
+# geom_label(aes(y=N+4000,x=frac.perfect+0.02,label=frac.perfect)) +
+# labs(x="fraction of strains covered by guide exactly", y="Number of guides")
 
 
-ggplot(o, aes(x=MinGuidesPerGene, y=N_Genes)) +
-geom_point() +
-facet_wrap(.~frac.perfect, labeller="label_both", nrow=2) +
-labs(x="Minimum desired number of quality guides per gene", y="Number of genes matching all QC criteria") +
-scale_x_continuous(breaks=1:10) +
-theme_few(15)
+# dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= 0.8, .N, by=list(GENEID]
 
-# Try top 20 genes within frac.perfect first
+# o <- foreach(i = c(0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.975, 0.99, 0.999, 1), .combine="rbind") %do% {
+#     foreach(MinGuidesPerGene = 1:10, .combine="rbind") %do% {
+#         data.table("frac.perfect"=i, 
+#                     "MinGuidesPerGene" = MinGuidesPerGene,
+#                     "N_Genes"=nrow(dat[fraction.into.gene < 0.8 & Score > 0 & frac.perfect >= i, .N, by=list(GENEID)][N >= MinGuidesPerGene]))
+#     }
+# }
 
-dat.filtered <- dat[QC_PASS == TRUE]
-dat.filtered[, "frac.perfect.rank" := frank(-frac.perfect, ties.method="random"), by=GENEID]
-dat.filtered[frac.perfect.rank <= 20][, .N, by=GENEID][N>=5]
 
-ggplot(dat.filtered[frac.perfect.rank <= 20], aes(x=GENEID, y=frac.perfect)) + geom_point()
+# ggplot(o, aes(x=MinGuidesPerGene, y=N_Genes)) +
+# geom_point() +
+# facet_wrap(.~frac.perfect, labeller="label_both", nrow=2) +
+# labs(x="Minimum desired number of quality guides per gene", y="Number of genes matching all QC criteria") +
+# scale_x_continuous(breaks=1:10) +
+# theme_few(15)
+
+# # Try top 20 genes within frac.perfect first
+
+# dat.filtered <- dat[QC_PASS == TRUE]
+# dat.filtered[, "frac.perfect.rank" := frank(-frac.perfect, ties.method="random"), by=GENEID]
+# dat.filtered[frac.perfect.rank <= 20][, .N, by=GENEID][N>=5]
+
+# ggplot(dat.filtered[frac.perfect.rank <= 20], aes(x=GENEID, y=frac.perfect)) + geom_point()
