@@ -5,8 +5,6 @@ import regex as re
 import sys
 
 data_infile = sys.argv[1]
-
-
 # add 3 to account for PAM
 nt_overlap_threshold = int(sys.argv[2]) + 3
 
