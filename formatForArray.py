@@ -3,7 +3,7 @@
 import sys
 
 guides_filename = sys.argv[1]
-Fprimer_filename = sys.argv[2]
+Fprimers_filename = sys.argv[2]
 structuralRprimer_filename = sys.argv[3]
 retron_filename = sys.argv[4]
 
@@ -13,16 +13,21 @@ with open(structuralRprimer_filename, 'r') as infile:
 with open(retron_filename, 'r') as infile:
     retron = infile.read().strip()
 
-with open(Fprimer_filename, 'r') as infile:
-    Fprimer = infile.read().strip()
+# currently only works with 2 sublibraries
+with open(Fprimers_filename, 'r') as infile:
+    Fprimers = infile.read().split("\n")[1:4:2]
 
 with open(guides_filename, 'r') as infile:
     for line in infile:
-        if line.startswith("uniqueID"):
+        if line.startswith("ID"):
             continue
         lineText = line.strip().split()
-        oligoName = "lewis_" + lineText[0]
-        guide = lineText[6][:20]
-        repairTemplate = lineText[11]
+        oligoName = lineText[0]
+        if oligoName.startswith("pan"):
+            Fprimer = Fprimers[0]
+        else:
+            Fprimer = Fprimers[1]
+        guide = lineText[10][:20]
+        repairTemplate = lineText[13]
         full_oligo = Fprimer + repairTemplate + retron + guide + structuralRprimer
         print(oligoName + "\t" + full_oligo)

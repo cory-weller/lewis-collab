@@ -5,6 +5,11 @@
 ./getData.sh
 ```
 
+## Process core guides
+```
+module load R/3.6.3
+Rscript processCoreGuides.R
+```
 
 ## Build list of core gene IDs in our core gene guide table
 ```
@@ -105,23 +110,16 @@ efetch -db nucleotide -id BK006949 -format fasta >> data/S288c.fasta
 # KP263414 mitochondrion
 ```
 
-## Calculate multiple-targetting of guides
+## Calculate multiple-targetting of pangenome guides
 ```
 sbatch guideTargeting.sh
 ```
 
-## Count number of PAM matches in guide
+## Count number of PAM matches in pangenome guides
 This is to avoid using guides that have too much overlapping sequence (10 bp or more)
 ```
 module load python/3.6
 python countPAM.py "data/pangenomeguides.scores.tab" 10 > data/pangenomeguides.scores.pam.tsv
-```
-
-## Process scored guides in R
-
-```
-module load R/3.6.3
-Rscript processPangenomeGuides.R
 ```
 
 ## Structural reverse primer sequence
@@ -133,7 +131,16 @@ Rscript processPangenomeGuides.R
 ## Format oligos for array ordering
 Note: Need to possibly change 5' primer sequence.
 
+## Process pangenome guides and combine with core guides
+
+```
+module load R/3.6.3
+Rscript processPangenomeGuides.R
+```
+
+
+
 ```
 module load python/3.6
-python formatForArray.py data/guides.final.tsv data/Fprimer.dna data/structuralRprimer.dna data/retron.dna > array_check.tsv
+python formatForArray.py data/guides.merged.filter.tsv data/Fprimers.dna data/structuralRprimer.dna data/retron.dna > array_check.tsv
 ```
