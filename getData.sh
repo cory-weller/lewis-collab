@@ -11,3 +11,8 @@ fi
 if [[ ! -f data/allORFS_pangenome.fasta.gz ]]; then
     wget -O "allORFs_pangenome.fasta.gz" "http://1002genomes.u-strasbg.fr/files/allORFs_pangenome.fasta.gz"
 fi
+
+if [[ ! -f data/50bpRTs.tsv.gz ]]; then
+    wget -O "data/50bpRTs.tsv.gz" "https://onedrive.live.com/download?cid=77DD71E598E5B51B&resid=77DD71E598E5B51B%2119043&authkey=AHSVpCt6FQZni1g" 
+fi
+
