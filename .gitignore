@@ -5,3 +5,6 @@ data/*.gz
 data/*.Rdata
 data/*.RDS
 *.json
+*.fa
+*.fasta
+tmp/*

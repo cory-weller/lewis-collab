@@ -68,6 +68,25 @@ if(! file.exists("data/coreguides.tsv.gz")) {
     coreGuides <- fread("zcat data/coreguides.tsv.gz")
 }
 
+## Load 50 bp homology RTs
+longerRTs <- fread('zcat data/50bpRTs.tsv.gz')
+
+
+# merge longer RTs
+
+setkey(longerRTs, chrom, start, end, guide, PAMstrand, GENEID)
+setkey(coreGuides, chrom, start, end, guide, PAMstrand, GENEID)
+
+coreGuides <- merge(coreGuides, longerRTs)
+
+# confirm repair templates are the same
+coreGuides[, RTcheck := substr(repair.templates.y, 2, 102)]
+coreGuides <- coreGuides[RTcheck == repair.templates.x]
+coreGuides[, c("RTcheck","repair.templates.x") := NULL]
+setnames(coreGuides, "repair.templates.y", "repair.templates")
+
+fwrite(coreGuides, file="data/coreGuides_50bp.tsv", quote=F, row.names=F, col.names=T, sep="\t")
+system("gzip data/coreGuides_50bp.tsv")
 
 # # Flag putative guides where fraction.into.gene < 0.8 and sgRNA score > 0
 
