@@ -5,7 +5,7 @@ library(data.table)
 
 if(! file.exists("data/guides.merged.tsv.gz")) {
     guideScores <- fread('data/pangenomeguides.scores.pam.tsv')
-    guideTargetCounts <- fread('data/guideTargetCounts.tsv')
+    guideTargetCounts <- fread('data/panGenomeGuideTargetCounts.tsv')
     setnames(guideTargetCounts, c("guide", "coreGenomePlus", "coreGenomeMinus", "panGenomePlus", "panGenomeMinus"))
 
     threePrimeRetron <- "AGGAAACCCGTTTCTTCTGACGTAAGGGTGCGCA"

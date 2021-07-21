@@ -1,18 +1,18 @@
 # lewis-collab
 
 ## download data
-```
+```bash
 ./getData.sh
 ```
 
 ## Process core guides
-```
+```bash
 module load R/3.6.3
 Rscript processCoreGuides.R
 ```
 
 ## Build list of core gene IDs in our core gene guide table
-```
+```bash
 zcat data/1011Genomes.guides.tsv.gz | \
     awk 'NR > 1 {print $8}' | \
     sort -u > data/1011Genomes.coreGenes.txt
@@ -25,7 +25,7 @@ zcat data/1011Genomes.guides.tsv.gz | \
 ## Find sequences unique to pangenome
 Inverse match core gene IDs on pangenome IDs
 Total number of genes generated based on core genome:
-```
+```bash
 grep ">" data/allORFS_pangenome.fasta | \
     grep -v -f data/1011Genomes.coreGenes.txt | \
     cut -d ">" -f 2 > data/pangenomeSpecificGenes.txt
@@ -39,7 +39,7 @@ cut -d "-" -f 1 data/pangenomeSpecificGenes.txt > data/pangenomeSpecificIDs.txt
 ```
 
 ## Generate pangenome-specific guide sequences
-```
+```bash
 module purge python
 module load python/3.6
 python findGuidesFromFasta.py data/allORFS_pangenome.fasta data/pangenomeSpecificIDs.txt | \
@@ -47,7 +47,7 @@ python findGuidesFromFasta.py data/allORFS_pangenome.fasta data/pangenomeSpecifi
 ```
 
 ## Score pangenome guides
-```
+```bash
 module purge python
 module load python/2.7
 # awk column 12 is unique ID, column 5 is guide sequence
@@ -70,7 +70,7 @@ module load python/2.7
 ```
 
 ## Retrieve reference sequences from NCBI
-```
+```bash
 # Download S288c reference genome fasta files:
 module load edirect
 efetch -db nucleotide -id KP263414 -format fasta  > data/S288c.fasta
@@ -111,15 +111,14 @@ efetch -db nucleotide -id BK006949 -format fasta >> data/S288c.fasta
 ```
 
 ## Calculate multiple-targetting of pangenome guides
-```
-sbatch guideTargeting.sh
+```bash
+sbatch --time=12:00:00	guideTargeting.sh
 ```
 
 ## Count number of PAM matches in pangenome guides
 This is to avoid using guides that have too much overlapping sequence (10 bp or more)
-```
-module load python/3.6
-python countPAM.py "data/pangenomeguides.scores.tab" 10 > data/pangenomeguides.scores.pam.tsv
+```bash
+python3 countPAM.py "data/pangenomeguides.scores.tab" 10 > data/pangenomeguides.scores.pam.tsv
 ```
 
 ## Structural reverse primer sequence
@@ -133,14 +132,18 @@ Note: Need to possibly change 5' primer sequence.
 
 ## Process pangenome guides and combine with core guides
 
-```
+```bash
 module load R/3.6.3
 Rscript processPangenomeGuides.R
 ```
 
 
 
-```
-module load python/3.6
-python formatForArray.py data/guides.merged.filter.tsv data/Fprimers.dna data/structuralRprimer.dna data/retron.dna > array_check.tsv
+```bash
+python3 formatForArray.py \
+    data/guides.merged.filter.tsv \
+    data/Fprimers.dna \
+    data/structuralRprimer.dna \
+    data/retron.dna \
+    > array_check.tsv
 ```

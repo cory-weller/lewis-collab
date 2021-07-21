@@ -34,20 +34,20 @@ if(! file.exists("data/coreguides.tsv.gz")) {
         # write guides (and their ID numbers) to .tsv file
         fwrite(coreGuides[, c("ID","guide")], file="coreguides.tsv", quote=F, row.names=F, col.names=F, sep="\t")
 
-        # count PAMs
-        system("python countPAM.py data/coreguides.scores.tsv 10 > data/coreguides.scores.pam.tsv")
-
         # convert .tsv to .fasta
         system("sed 's/^/>/g' coreguides.tsv | tr '\t' '\n' > sgRNAScorer2/coreguides.fasta && rm coreguides.tsv")
 
         system("(cd sgRNAScorer2 && python identifyAndScore.py -i coreguides.fasta -o ../data/coreguides.scores.tsv -p 3 -s 20 -l NGG)")   
+
+        # count PAMs
+        system("python countPAM.py data/coreguides.scores.tsv 10 > data/coreguides.scores.pam.tsv")
+
+        # clean up
         system("rm sgRNAScorer2/coreguides.fasta")
+
     }
 
     coreGuideScores <- fread('data/coreguides.scores.pam.tsv')
-
-    # generate histogram of scores
-    # hist(coreGuideScores$Score, breaks=50)
 
     # convert SeqID column back to simply numeric ID
 

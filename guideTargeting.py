@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
-import sys
 import regex as re
-
-coreGenomeFilename = sys.argv[1]
-panGenomeFilename = sys.argv[2]
-guidesFilename = sys.argv[3]
 
 # number of nucleotides (from 3' end) requiring perfect match
 threePrimeNucleotides = 12

@@ -24,9 +24,9 @@ with open(guides_filename, 'r') as infile:
         lineText = line.strip().split()
         oligoName = lineText[0]
         if oligoName.startswith("pan"):
-            Fprimer = Fprimers[0]
-        else:
             Fprimer = Fprimers[1]
+        else:
+            Fprimer = Fprimers[0]
         guide = lineText[10][:20]
         repairTemplate = lineText[13]
         full_oligo = Fprimer + repairTemplate + retron + guide + structuralRprimer
