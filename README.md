@@ -145,5 +145,5 @@ python3 formatForArray.py \
     data/Fprimers.dna \
     data/structuralRprimer.dna \
     data/retron.dna \
-    > array_check.tsv
+    > yeast-ko-array.txt
 ```

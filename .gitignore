@@ -8,3 +8,5 @@ data/*.RDS
 *.fa
 *.fasta
 tmp/*
+allORFs_pangenome.fasta.gz
+data/pangenomeguides.scores.tab
