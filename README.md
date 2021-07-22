@@ -147,3 +147,8 @@ python3 formatForArray.py \
     data/retron.dna \
     > yeast-ko-array.txt
 ```
+
+## Add control oligos
+```bash
+python3 addControlOligos.py >> yeast-ko-array.txt
+```
