@@ -1,4 +1,4 @@
-# lewis-collab
+# README
 
 ## download data
 ```bash
